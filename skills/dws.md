@@ -29,34 +29,47 @@ dws 的认证由 Wukong 守护进程自动管理，**不需要也不要直接调
 `wukong-cli.exe` 随 Wukong 安装，路径因机器/版本而异，**必须动态探测**。
 
 ```powershell
-# 步骤1：直接调用
 $wkcli = $null
-if (Get-Command wukong-cli -ErrorAction SilentlyContinue) { $wkcli = "wukong-cli" }
 
-# 步骤2：注册表查找
+# 步骤1：从运行中的 Wukong 进程定位（最快 — 前置条件已保证它在运行，毫秒级）
+$exe = Get-Process -ErrorAction SilentlyContinue |
+       Where-Object { $_.Path -and $_.Path -match '\\Wukong\\' } |
+       Select-Object -First 1 -ExpandProperty Path
+if ($exe) {
+    # 进程路径形如 <root>\Wukong\<version>\xxx.exe，向上回溯到 Wukong 根目录，只搜该子树
+    $searchRoot = $exe
+    for ($i = 0; $i -lt 3; $i++) {
+        $parent = Split-Path $searchRoot -Parent
+        if (-not $parent -or $parent -eq $searchRoot) { break }
+        $searchRoot = $parent
+        if ((Split-Path $searchRoot -Leaf) -eq 'Wukong') { break }
+    }
+    $wkcli = Get-ChildItem $searchRoot -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
+             Select-Object -First 1 -ExpandProperty FullName
+}
+
+# 步骤2 fallback：PATH
+if (-not $wkcli -and (Get-Command wukong-cli -ErrorAction SilentlyContinue)) {
+    $wkcli = "wukong-cli"
+}
+
+# 步骤3 fallback：注册表（仅在 Wukong 未运行时偶发触发）
 if (-not $wkcli) {
     $installDir = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-                               "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" `
+                                "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" `
         -ErrorAction SilentlyContinue | Get-ItemProperty |
         Where-Object { $_.DisplayName -like "*Wukong*" -or $_.DisplayName -like "*悟空*" } |
         Select-Object -ExpandProperty InstallLocation -First 1
     if ($installDir) {
-        $found = Get-ChildItem $installDir -Recurse -Filter "wukong-cli.exe" -ErrorAction SilentlyContinue |
+        $wkcli = Get-ChildItem $installDir -Recurse -Filter "wukong-cli.exe" -ErrorAction SilentlyContinue |
                  Select-Object -First 1 -ExpandProperty FullName
-        if ($found) { $wkcli = $found }
     }
 }
 
-# 步骤3：文件系统扫描
-if (-not $wkcli) {
-    $wkcli = Get-ChildItem "$env:ProgramFiles", "${env:ProgramFiles(x86)}", "$env:LOCALAPPDATA" `
-        -Recurse -Filter "wukong-cli.exe" -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -like "*Wukong*" } |
-        Select-Object -First 1 -ExpandProperty FullName
-}
-
-if (-not $wkcli) { Write-Host "未找到 wukong-cli.exe，请确认已安装 Wukong 桌面端" }
+if (-not $wkcli) { Write-Host "未找到 wukong-cli.exe，请确认 Wukong 桌面端已运行" }
 ```
+
+> ⚡ 注：旧版本会对 `Program Files` / `LocalAppData` 做全盘递归扫描，安装在非 C 盘时可能等待数秒。新版本利用「前置条件 Wukong 必须运行」直接从进程拿真实路径，毫秒级返回，且支持任意盘符。
 
 找到后，变量 `$wkcli` 即为后续所有调用的入口。
 

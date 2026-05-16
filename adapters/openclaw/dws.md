@@ -43,9 +43,24 @@ tags: [dingtalk, dingding, productivity, messaging, documents]
 
 ```powershell
 $wkcli = $null
-# 尝试1：PATH 直接调用
-if (Get-Command wukong-cli -ErrorAction SilentlyContinue) { $wkcli = "wukong-cli" }
-# 尝试2：注册表查找
+# 尝试1：从运行中的 Wukong 进程定位（最快 — 前置条件已要求它在运行）
+$exe = Get-Process -ErrorAction SilentlyContinue |
+       Where-Object { $_.Path -and $_.Path -match '\\Wukong\\' } |
+       Select-Object -First 1 -ExpandProperty Path
+if ($exe) {
+    $root = $exe
+    for ($i = 0; $i -lt 3; $i++) {
+        $parent = Split-Path $root -Parent
+        if (-not $parent -or $parent -eq $root) { break }
+        $root = $parent
+        if ((Split-Path $root -Leaf) -eq 'Wukong') { break }
+    }
+    $wkcli = Get-ChildItem $root -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
+             Select-Object -First 1 -ExpandProperty FullName
+}
+# 尝试2 fallback：PATH
+if (-not $wkcli -and (Get-Command wukong-cli -ErrorAction SilentlyContinue)) { $wkcli = "wukong-cli" }
+# 尝试3 fallback：注册表
 if (-not $wkcli) {
     $dir = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
                          "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" `
@@ -53,20 +68,12 @@ if (-not $wkcli) {
         Where-Object { $_.DisplayName -like "*Wukong*" -or $_.DisplayName -like "*悟空*" } |
         Select-Object -ExpandProperty InstallLocation -First 1
     if ($dir) {
-        $found = Get-ChildItem $dir -Recurse -Filter "wukong-cli.exe" -ErrorAction SilentlyContinue |
+        $wkcli = Get-ChildItem $dir -Recurse -Filter "wukong-cli.exe" -ErrorAction SilentlyContinue |
                  Select-Object -First 1 -ExpandProperty FullName
-        if ($found) { $wkcli = $found }
     }
 }
-# 尝试3：文件系统扫描
-if (-not $wkcli) {
-    $wkcli = Get-ChildItem "$env:ProgramFiles","${env:ProgramFiles(x86)}","$env:LOCALAPPDATA" `
-        -Recurse -Filter "wukong-cli.exe" -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -like "*Wukong*" } |
-        Select-Object -First 1 -ExpandProperty FullName
-}
 # 找不到时提示用户
-if (-not $wkcli) { Write-Host "未找到 wukong-cli.exe，请确认已安装 Wukong 桌面端" }
+if (-not $wkcli) { Write-Host "未找到 wukong-cli.exe，请确认 Wukong 桌面端已运行" }
 ```
 
 ### 第三步：执行钉钉操作

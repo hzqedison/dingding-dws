@@ -51,12 +51,29 @@ Write-Output ($pipes.Count -gt 0).ToString().ToLower()
 const PS_FIND_WKCLI = String.raw`
 $wkcli = $null
 
-# Step 1: PATH
-if (Get-Command wukong-cli -ErrorAction SilentlyContinue) {
+# Step 1: Locate from running Wukong process (fastest — pre-check guarantees it's running)
+$exe = Get-Process -ErrorAction SilentlyContinue |
+       Where-Object { $_.Path -and $_.Path -match '\\Wukong\\' } |
+       Select-Object -First 1 -ExpandProperty Path
+if ($exe) {
+    # Process path is typically <root>\Wukong\<version>\xxx.exe — walk up to "Wukong" root
+    $searchRoot = $exe
+    for ($i = 0; $i -lt 3; $i++) {
+        $parent = Split-Path $searchRoot -Parent
+        if (-not $parent -or $parent -eq $searchRoot) { break }
+        $searchRoot = $parent
+        if ((Split-Path $searchRoot -Leaf) -eq 'Wukong') { break }
+    }
+    $wkcli = Get-ChildItem $searchRoot -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
+             Select-Object -First 1 -ExpandProperty FullName
+}
+
+# Step 2 fallback: PATH
+if (-not $wkcli -and (Get-Command wukong-cli -ErrorAction SilentlyContinue)) {
     $wkcli = "wukong-cli"
 }
 
-# Step 2: Registry
+# Step 3 fallback: Registry
 if (-not $wkcli) {
     $installDir = Get-ChildItem `
         "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
@@ -65,19 +82,10 @@ if (-not $wkcli) {
         Where-Object { $_.DisplayName -like "*Wukong*" -or $_.DisplayName -like "*悟空*" } |
         Select-Object -ExpandProperty InstallLocation -First 1
     if ($installDir) {
-        $found = Get-ChildItem $installDir -Recurse -Filter "wukong-cli.exe" `
+        $wkcli = Get-ChildItem $installDir -Recurse -Filter "wukong-cli.exe" `
                  -ErrorAction SilentlyContinue |
                  Select-Object -First 1 -ExpandProperty FullName
-        if ($found) { $wkcli = $found }
     }
-}
-
-# Step 3: Filesystem scan
-if (-not $wkcli) {
-    $wkcli = Get-ChildItem "$env:ProgramFiles", "${env:ProgramFiles(x86)}", "$env:LOCALAPPDATA" `
-        -Recurse -Filter "wukong-cli.exe" -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -like "*Wukong*" } |
-        Select-Object -First 1 -ExpandProperty FullName
 }
 
 Write-Output $wkcli
