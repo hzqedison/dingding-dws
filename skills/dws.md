@@ -32,20 +32,25 @@ dws 的认证由 Wukong 守护进程自动管理，**不需要也不要直接调
 $wkcli = $null
 
 # 步骤1：从运行中的 Wukong 进程定位（最快 — 前置条件已保证它在运行，毫秒级）
-$exe = Get-Process -ErrorAction SilentlyContinue |
-       Where-Object { $_.Path -and $_.Path -match '\\Wukong\\' } |
-       Select-Object -First 1 -ExpandProperty Path
+# 进程路径形如 <root>\Wukong\<version>\xxx.exe（版本号开头要求数字，避免误匹配《黑神话：悟空》等同名路径）
+$exe = Get-Process -ErrorAction SilentlyContinue | ForEach-Object {
+    try { if ($_.Path -and $_.Path -match '\\Wukong\\\d') { $_.Path } } catch { }
+} | Select-Object -First 1
+
 if ($exe) {
-    # 进程路径形如 <root>\Wukong\<version>\xxx.exe，向上回溯到 Wukong 根目录，只搜该子树
+    # 向上回溯到名为 Wukong 的目录，只搜该子树
     $searchRoot = $exe
+    $foundWukongRoot = $false
     for ($i = 0; $i -lt 3; $i++) {
         $parent = Split-Path $searchRoot -Parent
         if (-not $parent -or $parent -eq $searchRoot) { break }
         $searchRoot = $parent
-        if ((Split-Path $searchRoot -Leaf) -eq 'Wukong') { break }
+        if ((Split-Path $searchRoot -Leaf) -eq 'Wukong') { $foundWukongRoot = $true; break }
     }
-    $wkcli = Get-ChildItem $searchRoot -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
-             Select-Object -First 1 -ExpandProperty FullName
+    if ($foundWukongRoot) {  # 守卫：未确认 Wukong 根目录时不做递归搜索（防止退化到全盘扫描）
+        $wkcli = Get-ChildItem $searchRoot -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
+                 Select-Object -First 1 -ExpandProperty FullName
+    }
 }
 
 # 步骤2 fallback：PATH

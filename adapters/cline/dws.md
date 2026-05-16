@@ -30,19 +30,21 @@ No output → daemon offline. Tell user: *"Please start the Wukong (悟空) desk
 ```powershell
 $wkcli = $null
 # 1. From running Wukong process (fastest)
-$exe = Get-Process -ErrorAction SilentlyContinue |
-       Where-Object { $_.Path -and $_.Path -match '\\Wukong\\' } |
-       Select-Object -First 1 -ExpandProperty Path
+$exe = Get-Process -ErrorAction SilentlyContinue | ForEach-Object {
+    try { if ($_.Path -and $_.Path -match '\\Wukong\\\d') { $_.Path } } catch { }
+} | Select-Object -First 1
 if ($exe) {
-    $root = $exe
+    $root = $exe; $found = $false
     for ($i = 0; $i -lt 3; $i++) {
         $parent = Split-Path $root -Parent
         if (-not $parent -or $parent -eq $root) { break }
         $root = $parent
-        if ((Split-Path $root -Leaf) -eq 'Wukong') { break }
+        if ((Split-Path $root -Leaf) -eq 'Wukong') { $found = $true; break }
     }
-    $wkcli = Get-ChildItem $root -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
-             Select-Object -First 1 -ExpandProperty FullName
+    if ($found) {
+        $wkcli = Get-ChildItem $root -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
+                 Select-Object -First 1 -ExpandProperty FullName
+    }
 }
 # 2. PATH fallback
 if (-not $wkcli -and (Get-Command wukong-cli -ErrorAction SilentlyContinue)) { $wkcli = "wukong-cli" }

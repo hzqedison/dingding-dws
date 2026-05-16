@@ -52,20 +52,25 @@ const PS_FIND_WKCLI = String.raw`
 $wkcli = $null
 
 # Step 1: Locate from running Wukong process (fastest — pre-check guarantees it's running)
-$exe = Get-Process -ErrorAction SilentlyContinue |
-       Where-Object { $_.Path -and $_.Path -match '\\Wukong\\' } |
-       Select-Object -First 1 -ExpandProperty Path
+# Require \Wukong\<digit> to avoid matching unrelated paths (e.g., game install dirs with "Wukong" in name)
+$exe = Get-Process -ErrorAction SilentlyContinue | ForEach-Object {
+    try { if ($_.Path -and $_.Path -match '\\Wukong\\\d') { $_.Path } } catch { }
+} | Select-Object -First 1
+
 if ($exe) {
-    # Process path is typically <root>\Wukong\<version>\xxx.exe — walk up to "Wukong" root
+    # Walk up to a folder literally named "Wukong"
     $searchRoot = $exe
+    $foundWukongRoot = $false
     for ($i = 0; $i -lt 3; $i++) {
         $parent = Split-Path $searchRoot -Parent
         if (-not $parent -or $parent -eq $searchRoot) { break }
         $searchRoot = $parent
-        if ((Split-Path $searchRoot -Leaf) -eq 'Wukong') { break }
+        if ((Split-Path $searchRoot -Leaf) -eq 'Wukong') { $foundWukongRoot = $true; break }
     }
-    $wkcli = Get-ChildItem $searchRoot -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
-             Select-Object -First 1 -ExpandProperty FullName
+    if ($foundWukongRoot) {  # Guard: only recurse when we confirmed the Wukong root
+        $wkcli = Get-ChildItem $searchRoot -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
+                 Select-Object -First 1 -ExpandProperty FullName
+    }
 }
 
 # Step 2 fallback: PATH

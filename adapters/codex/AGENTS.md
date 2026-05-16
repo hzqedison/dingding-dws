@@ -26,19 +26,22 @@ No output → daemon not running. Notify the user and stop.
 ```powershell
 $wkcli = $null
 # Step 1: Locate from the running Wukong process (fastest — daemon is already required)
-$exe = Get-Process -ErrorAction SilentlyContinue |
-       Where-Object { $_.Path -and $_.Path -match '\\Wukong\\' } |
-       Select-Object -First 1 -ExpandProperty Path
+$exe = Get-Process -ErrorAction SilentlyContinue | ForEach-Object {
+    try { if ($_.Path -and $_.Path -match '\\Wukong\\\d') { $_.Path } } catch { }
+} | Select-Object -First 1
 if ($exe) {
     $searchRoot = $exe
+    $foundWukongRoot = $false
     for ($i = 0; $i -lt 3; $i++) {
         $parent = Split-Path $searchRoot -Parent
         if (-not $parent -or $parent -eq $searchRoot) { break }
         $searchRoot = $parent
-        if ((Split-Path $searchRoot -Leaf) -eq 'Wukong') { break }
+        if ((Split-Path $searchRoot -Leaf) -eq 'Wukong') { $foundWukongRoot = $true; break }
     }
-    $wkcli = Get-ChildItem $searchRoot -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
-             Select-Object -First 1 -ExpandProperty FullName
+    if ($foundWukongRoot) {
+        $wkcli = Get-ChildItem $searchRoot -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
+                 Select-Object -First 1 -ExpandProperty FullName
+    }
 }
 # Step 2 fallback: PATH
 if (-not $wkcli -and (Get-Command wukong-cli -ErrorAction SilentlyContinue)) { $wkcli = "wukong-cli" }

@@ -44,19 +44,21 @@ tags: [dingtalk, dingding, productivity, messaging, documents]
 ```powershell
 $wkcli = $null
 # 尝试1：从运行中的 Wukong 进程定位（最快 — 前置条件已要求它在运行）
-$exe = Get-Process -ErrorAction SilentlyContinue |
-       Where-Object { $_.Path -and $_.Path -match '\\Wukong\\' } |
-       Select-Object -First 1 -ExpandProperty Path
+$exe = Get-Process -ErrorAction SilentlyContinue | ForEach-Object {
+    try { if ($_.Path -and $_.Path -match '\\Wukong\\\d') { $_.Path } } catch { }
+} | Select-Object -First 1
 if ($exe) {
-    $root = $exe
+    $root = $exe; $found = $false
     for ($i = 0; $i -lt 3; $i++) {
         $parent = Split-Path $root -Parent
         if (-not $parent -or $parent -eq $root) { break }
         $root = $parent
-        if ((Split-Path $root -Leaf) -eq 'Wukong') { break }
+        if ((Split-Path $root -Leaf) -eq 'Wukong') { $found = $true; break }
     }
-    $wkcli = Get-ChildItem $root -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
-             Select-Object -First 1 -ExpandProperty FullName
+    if ($found) {
+        $wkcli = Get-ChildItem $root -Filter "wukong-cli.exe" -Recurse -ErrorAction SilentlyContinue |
+                 Select-Object -First 1 -ExpandProperty FullName
+    }
 }
 # 尝试2 fallback：PATH
 if (-not $wkcli -and (Get-Command wukong-cli -ErrorAction SilentlyContinue)) { $wkcli = "wukong-cli" }

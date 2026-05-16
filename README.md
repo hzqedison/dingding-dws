@@ -7,7 +7,8 @@
 
 <p align="center">
   <a href="https://github.com/hzqedison/dingding-dws/stargazers"><img src="https://img.shields.io/github/stars/hzqedison/dingding-dws?style=flat-square&logo=github" alt="GitHub stars"></a>
-  <a href="https://github.com/hzqedison/dingding-dws/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License: MIT"></a>
+  <a href="THIRD_PARTY_NOTICES.md"><img src="https://img.shields.io/badge/3rd--party-notice-yellow?style=flat-square" alt="Third-party notice"></a>
   <a href="https://wukong.dingtalk.com"><img src="https://img.shields.io/badge/Wukong-required-blue?style=flat-square" alt="Wukong required"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-orange?style=flat-square" alt="MCP"></a>
   <img src="https://img.shields.io/badge/platform-Windows-lightgrey?style=flat-square" alt="Platform">
@@ -644,6 +645,17 @@ n8n/Zapier use DingTalk Open API (enterprise setup needed); RPA simulates UI cli
 Issues and PRs welcome: [github.com/hzqedison/dingding-dws/issues](https://github.com/hzqedison/dingding-dws/issues)
 
 If this project helps you, **drop a ⭐ Star!**
+
+---
+
+## 📄 License & Disclaimer / 许可证与免责声明
+
+- The original code of this project (MCP server, adapters, installer, README, wrapper skill) is licensed under the **[MIT License](LICENSE)**.
+  本项目原创代码（MCP server、适配器、安装脚本、README、wrapper skill）采用 **[MIT 许可证](LICENSE)** 开源。
+- This repository also bundles reference materials originating from the Wukong (悟空) desktop app, which remain the property of **DingTalk / Alibaba Group**. See **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)** for details.
+  仓库内捆绑的 `skills/dws-refs/` 和 `skills/dws-scripts/` 来自钉钉 Wukong（悟空）桌面端，著作权归**阿里巴巴集团**所有，详见 **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)**。
+- **This project is unofficial and is not affiliated with, endorsed by, or sponsored by Alibaba Group, DingTalk, or the Wukong product team.** All product names and trademarks remain the property of their respective owners.
+  **本项目为非官方开源工具，与阿里巴巴、钉钉、Wukong 无任何隶属、背书、赞助关系**。所有产品名与商标归各自权利人所有。
 
 ---
 
