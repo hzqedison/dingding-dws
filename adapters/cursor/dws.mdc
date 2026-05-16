@@ -1,0 +1,60 @@
+---
+description: DingTalk operations — use for any task involving DingTalk (messages, docs, calendar, approvals, todos, contacts, etc.)
+alwaysApply: false
+---
+
+# DingTalk (dws)
+
+For any DingTalk-related task, execute via `wukong-cli` as described below.
+
+> **Prerequisite:** Wukong (悟空) desktop app must be running and logged in.
+> If `\\.\pipe\real-daemon` does not exist, prompt the user to start it.
+
+## Execution
+
+### 1. Check daemon
+```powershell
+[System.IO.Directory]::GetFiles("\\.\pipe\") | Where-Object { $_ -match "real-daemon" }
+```
+No output → daemon offline. Tell user: *"Please start Wukong (悟空) and log in to DingTalk."*
+
+### 2. Find wukong-cli (once per session)
+```powershell
+$wkcli = $null
+if (Get-Command wukong-cli -ErrorAction SilentlyContinue) { $wkcli = "wukong-cli" }
+if (-not $wkcli) {
+    $dir = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+                         "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" `
+        -ErrorAction SilentlyContinue | Get-ItemProperty |
+        Where-Object { $_.DisplayName -like "*Wukong*" -or $_.DisplayName -like "*悟空*" } |
+        Select-Object -ExpandProperty InstallLocation -First 1
+    if ($dir) {
+        $found = Get-ChildItem $dir -Recurse -Filter "wukong-cli.exe" -ErrorAction SilentlyContinue |
+                 Select-Object -First 1 -ExpandProperty FullName
+        if ($found) { $wkcli = $found }
+    }
+}
+if (-not $wkcli) {
+    $wkcli = Get-ChildItem "$env:ProgramFiles","${env:ProgramFiles(x86)}","$env:LOCALAPPDATA" `
+        -Recurse -Filter "wukong-cli.exe" -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -like "*Wukong*" } |
+        Select-Object -First 1 -ExpandProperty FullName
+}
+```
+
+### 3. Execute task
+```powershell
+$result = & $wkcli --socket "\\.\pipe\real-daemon" `
+    -p "<task>" `
+    --output-format json `
+    --max-turns 3 `
+    2>&1 | Select-Object -First 20
+($result | ConvertFrom-Json).output_text
+```
+
+`--max-turns`: 3 (simple) · 5 (multi-step) · 8 (batch)
+
+## Rules
+- Confirm before: delete, dissolve group, send DING, approve/reject OA.
+- Never fabricate IDs. Query first if ID is unknown.
+- Always append `| Select-Object -First 20`.

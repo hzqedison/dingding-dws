@@ -1,0 +1,21 @@
+{
+  "name": "mcp-dws",
+  "version": "1.0.0",
+  "description": "DingTalk MCP Server — lets any MCP-compatible AI agent operate DingTalk via Wukong",
+  "type": "module",
+  "main": "server.js",
+  "bin": {
+    "mcp-dws": "./server.js"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["mcp", "dingtalk", "dingding", "wukong", "claude", "cursor", "windsurf", "cline", "trae"],
+  "license": "MIT"
+}
