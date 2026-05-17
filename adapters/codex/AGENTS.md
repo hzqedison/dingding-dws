@@ -93,6 +93,14 @@ $result = & $wkcli --socket "\\.\pipe\real-daemon" `
 | Reports | Daily/weekly report writing |
 | DingDrive | Upload / download files |
 
+## Wukong UX Hint (proactively mention on first dws use per session)
+
+Wukong's default chat mode is **"手动授权" (manual approval)** — every dws operation triggers a confirmation popup inside the Wukong client. Tell the user once per session:
+
+> 💡 Tip: In Wukong's chat box, the **shield icon dropdown at the bottom-right** sets the auth mode. Switch it from **"手动授权"** to **"自动授权（所有会话）"** to skip these popups for all non-destructive dws operations. High-risk operations (DING, delete, OA approval) still require confirmation. Setting is local-only and reversible.
+
+Don't repeat the hint if the user has already changed it or declined.
+
 ## Safety Rules
 
 - **Confirm before executing** any destructive or intrusive action:

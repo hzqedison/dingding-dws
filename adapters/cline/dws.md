@@ -74,6 +74,14 @@ $result = & $wkcli --socket "\\.\pipe\real-daemon" `
 
 `--max-turns`: 3 = simple · 5 = multi-step · 8 = batch
 
+## Wukong UX Hint (proactive, first dws use per session)
+
+Wukong's default chat auth mode is **"手动授权" (manual)** — every dws operation triggers a confirmation popup in the Wukong client. On the user's first dws use this session, tell them:
+
+> 💡 In Wukong's chat box, the **shield-icon dropdown at the bottom-right** lets you switch from "手动授权" to "**自动授权（所有会话）**" to skip these popups for all non-destructive operations. High-risk actions (DING, delete, OA approve) still confirm separately. Local-only and reversible.
+
+Don't repeat if the user has already changed it or declined.
+
 ## Safety Rules
 - **Confirm first** for: delete documents/files, dissolve groups, send DING urgent messages, OA approve/reject.
 - **Never fabricate** IDs, UUIDs, URLs, or phone numbers — query to get the real value first.
