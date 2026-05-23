@@ -1,0 +1,61 @@
+# 本地工作目录
+.work/
+
+# 临时数据和报告文件
+*.json
+*_report.md
+
+# 调试脚本
+debug_*.py
+parse_*.py
+
+# 系统文件
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+__pycache__/
+
+# Node
+node_modules/
+package-lock.json
+npm-debug.log
+
+# 其他临时文件
+*.tmp
+*.bak
+*.backup
+*.old
+*.log
+.DS_Store
